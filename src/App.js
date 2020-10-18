@@ -1,25 +1,57 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import logo from "./logo.svg";
+import "./App.css";
+import { useInfiniteQuery } from "react-query";
+import { fetchTodos } from "./api";
+import { AddTodo } from "./AddTodo";
+import { TodoItem } from "./TodoItem";
 
 function App() {
+  const {
+    data,
+    error,
+    isLoading,
+    isError,
+    canFetchMore,
+    fetchMore,
+    isFetchingMore,
+  } = useInfiniteQuery("todos", fetchTodos, {
+    getFetchMore: (lastGroup) => lastGroup.offset,
+  });
+
+  if (isLoading) {
+    return <p>Loading...</p>;
+  }
+
+  if (isError) {
+    return <p>{JSON.stringify(error)}</p>;
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
+    <>
+      <AddTodo/>
+      <ul>
+        {data.map((group, i) => (
+          <React.Fragment key={i}>
+            {group.records.map(({id, fields}) => {
+              return <TodoItem key={id} id={id} {...fields}/>
+            })}
+          </React.Fragment>
+        ))}
+      </ul>
+      <div>
+        <button
+          onClick={() => fetchMore()}
+          disabled={!canFetchMore || isFetchingMore}
         >
-          Learn React
-        </a>
-      </header>
-    </div>
+          {isFetchingMore
+            ? "Loading more..."
+            : canFetchMore
+            ? "Load more"
+            : "Nothing to load"}
+        </button>
+      </div>
+    </>
   );
 }
 
